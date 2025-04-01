@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark d-flex justify-content-between	">
+        <div class="containe">
+            <a class="navbar-brand px-3" href="dashboard.html">E-Library</a>
+        </div>
+            <div class="containe px-3">
+            <button class="btn btn-danger pe-3" onclick="(()=>{window.location.href = 'editdashboard.html';})()">Edit</button>
+            <button class="btn btn-danger" onclick="(()=>{window.location.href = 'post.html';})()">Add Book</button>
+            <button class="btn btn-danger pe-3" onclick="logout()">Logout</button>
+        </div>
+        
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="text-center">Library Dashboard</h2>
+
+        <!-- Search Bar -->
+        <div class="input-group mb-4 d-flex justify-content-between" >
+            <input type="text" class="form-control mx-3" id="searchInput" placeholder="Search books...">
+            <button class="btn btn-primary mx-3" onclick="searchBooks()">Search</button>
+        </div>
+
+        <!-- Books Grid -->
+        <div class="row" id="booksContainer">
+            <!-- Books will be dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", fetchBooks);
+
+        document.getElementById("searchInput").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                searchBooks();
+         }
+        });
+
+        async function fetchBooks() {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                alert("You are not logged in!");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                const response = await fetch("https://e-library-lpwy.onrender.com/findall", {
+                    method: "GET",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+        
+                console.log(response.status);
+
+                if (!response.ok ) {
+                    const container = document.getElementById("booksContainer");
+                    container.innerHTML = " No Book is available now";
+                }else{
+
+                const books = await response.json();
+                
+                displayBooks(books);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error fetching books.");
+            }
+        }
+
+         function displayBooks(books) {
+             const container = document.getElementById("booksContainer");
+             container.innerHTML = "";
+             const token = localStorage.getItem("token");
+
+            
+            books.forEach(async (book) => {
+                 // Construct the full image URL from the imageName sent by the backend
+               const imageUrl = "https://e-library-lpwy.onrender.com/images/" + book.imagename
+               
+
+
+          const bookCard = `
+              <div class="col-md-3 mb-4">
+                  <div class="card h-100" onclick="openBookPdf('${encodeURIComponent(book.name)}', '${encodeURIComponent(book.author)}')">
+                      <a href="${imageUrl}" target="_blank">
+                          <img src="${imageUrl}" class="card-img-top" alt="${book.name}">
+                      </a>
+                      <div class="card-body">
+                          <h5 class="card-title">${book.name}</h5>
+                          <p class="card-text">by ${book.author}</p>
+                      </div>
+                  </div>
+              </div>
+          `;
+          container.innerHTML += bookCard;
+      });
+    }
+
+
+    async function openBookPdf(name, author) {
+        event.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+        alert("You are not logged in!");
+        window.location.href = "login.html";
+        return;
+    }
+    
+
+    // Construct the URL with encoded query parameters
+    const url = `/find?name=${encodeURIComponent(name)}&author=${encodeURIComponent(author)}`;
+    
+    try {
+        // Use fetch to get the PDF with Authorization header
+        const response = await fetch("https://e-library-lpwy.onrender.com"+url, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+        
+        
+        if (!response.ok) {
+            throw new Error("Failed to fetch PDF");
+        }
+        
+        // Convert the response to a Blob (PDF file)
+        const blob = await response.blob();
+        
+        // Create a URL for the Blob
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Open the Blob URL in a new window/tab
+        window.open(blobUrl, "_blank");
+    } catch (error) {
+        alert("Error fetching PDF: " + error.message);
+        console.error("Error fetching PDF:", error);
+    }
+}
+
+    
+async function searchBooks() {
+            const searchTerm = document.getElementById("searchInput").value;
+            
+            const token = localStorage.getItem("token");
+
+              if (!token) {
+                 alert("You are not logged in!");
+             window.location.href = "login.html";
+              return;
+            }
+
+            try {
+             const response = await fetch("https://e-library-lpwy.onrender.com/find/"+searchTerm, {
+                 method: "GET",
+                 headers: { "Authorization": `Bearer ${token}` }
+                  });
+
+
+    if (!response.ok) throw new Error("Failed to fetch books.");
+
+    const books = await response.json();
+   
+    displayBooks(books);
+} catch (error) {
+    console.error(error);
+    alert("Error fetching books.");
+}
+
+
+
+            books.forEach(book => {
+                const title = book.querySelector(".card-title").textContent.toLowerCase();
+                const author = book.querySelector(".card-text").textContent.toLowerCase();
+
+                if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                    book.parentElement.style.display = "block";
+                } else {
+                    book.parentElement.style.display = "none";
+                }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            alert("Logged out successfully.");
+            window.location.href = "login.html";
+        }
+        
+    </script>
+</body>
+</html>

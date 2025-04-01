@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h2 {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .loader {
+            display: none;
+            margin: 10px auto;
+            width: 40px;
+            height: 40px;
+            border: 5px solid #ccc;
+            border-top-color: #007BFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .progress-bar {
+            height: 10px;
+            width: 0%;
+            background-color: #007BFF;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload a Book</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="author">Author Name:</label>
+            <input type="text" id="author" required><br>
+
+            <label for="file">Choose PDF:</label>
+            <input type="file" id="file" accept=".pdf" required><br>
+
+            <button type="submit">Upload</button>
+            <button type="submit" onclick="(()=>{ window.location.href='dashboard.html';})()">Dashboard</button>
+
+            <div class="loader" id="loader"></div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <p id="responseMessage"></p>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("You are not logged in!");
+                window.location.href = "login.html";
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("name", document.getElementById("author").value);
+            formData.append("file", document.getElementById("file").files[0]);
+
+            let loader = document.getElementById("loader");
+            let progressContainer = document.getElementById("progressContainer");
+            let progressBar = document.getElementById("progressBar");
+            let responseMessage = document.getElementById("responseMessage");
+
+            loader.style.display = "block";
+            progressContainer.style.display = "block";
+            progressBar.style.width = "0%";
+            responseMessage.innerText = "";
+
+            fetch("https://e-library-lpwy.onrender.com/post", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                responseMessage.innerText = data;
+                document.getElementById("author").value = "";
+                document.getElementById("file").value = "";
+            })
+            .catch(error => console.error("Error:", error))
+            .finally(() => {
+                loader.style.display = "none";
+                progressContainer.style.display = "none";
+            });
+
+            // Simulate progress bar
+            let progress = 0;
+            let interval = setInterval(() => {
+                if (progress >= 100) {
+                    clearInterval(interval);
+                } else {
+                    progress += 10;
+                    progressBar.style.width = progress + "%";
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5" style="max-width: 400px;">
+        <h2 class="text-center">Sign Up</h2>
+
+        <div id="error-message" class="alert alert-danger d-none"></div>
+        <div id="success-message" class="alert alert-success d-none"></div>
+
+        <!-- Role Selection -->
+        <div class="mb-3">
+            <label class="form-label">Sign Up As:</label>
+            <select class="form-select" id="roleSelect">
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+            </select>
+        </div>
+
+        <form id="signupForm">
+            <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" id="firstName" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastName" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+
+            <!-- Admin Key Field (Hidden by Default) -->
+            <div class="mb-3 d-none" id="adminKeyContainer">
+                <label class="form-label">Admin Key</label>
+                <input type="password" class="form-control" id="adminKey">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+        </form>
+
+        <button id="loginButton" class="btn btn-secondary w-100 mt-3" onclick="window.location.href='login.html'">Go to Login</button>
+    </div>
+
+    <script>
+        document.getElementById("roleSelect").addEventListener("change", function() {
+            const adminKeyContainer = document.getElementById("adminKeyContainer");
+            if (this.value === "ADMIN") {
+                adminKeyContainer.classList.remove("d-none"); // Show Admin Key field
+            } else {
+                adminKeyContainer.classList.add("d-none"); // Hide Admin Key field
+            }
+        });
+
+        document.getElementById("signupForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            document.getElementById("error-message").classList.add("d-none");
+            document.getElementById("success-message").classList.add("d-none");
+           
+
+            const firstname = document.getElementById("firstName").value;
+            const lastname = document.getElementById("lastName").value;
+            const username = document.getElementById("username").value;
+            const emailid = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const role = document.getElementById("roleSelect").value;
+            const key = role === "ADMIN" ? document.getElementById("adminKey").value : null;
+
+            const requestBody = { firstname, lastname, username, emailid, password, role };
+            if (key) requestBody.key = key;
+            // console.log(requestBody);
+
+            try {
+                const response = await fetch("https://e-library-lpwy.onrender.com/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Sign-up failed. Check details and try again.");
+                }
+
+                document.getElementById("success-message").textContent = "Sign-up successful! Click below to login.";
+                document.getElementById("success-message").classList.remove("d-none");
+            } catch (error) {
+                document.getElementById("error-message").textContent = error.message;
+                document.getElementById("error-message").classList.remove("d-none");
+            }
+        });
+    </script>
+</body>
+</html>
